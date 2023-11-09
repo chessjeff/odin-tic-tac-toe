@@ -8,8 +8,48 @@ const Board = (function() {
     return {boardArray, writeToBoard}
 })();
 
-const Game = (function(){
-    const playerMarker = 'x'
+const Players = (function(){
+    const playerList = []
+
+    const createUser = function(name) {
+        const playerName = name;
+        const playerMarker = (function() {
+            let marker;
+            if (playerList.length == 0) {
+                marker = 'X'
+            } else if (playerList.length == 1) {
+                marker = 'O'
+            }
+            return marker;
+        })();
+        if (playerList.length < 2) {
+            playerList.push({playerName, playerMarker});
+        } //playerList[{name, marker}, {name, marker}]
+        return {playerName, playerMarker};
+    }
+
+    const markerIndex = () => [Players.playerList[0].playerMarker, Players.playerList[1].playerMarker]
+
+    return {playerList, createUser, markerIndex}
+})();
+
+const Game = (function() {
+    let i = 0; //random number to pick first turn? //currently Os always go first by nature of getPlayerMarker
+    const getPlayerMarker = function() { //cycles between x and o via markerIndex indexes 
+        let marker;
+        if (Players.markerIndex().length == 2) {
+            if (i == 1) {
+                i--;
+            } else {
+                i++;
+            }
+            marker = Players.markerIndex()[i];
+            return {marker};
+        } else {
+            alert('no players assigned')
+        }
+    }
+
     const getPlayerSelection = function() {
         if (!Board.boardArray.every(Boolean)) {
             chosenCell = parseInt(prompt("enter a number between 1 and 9")) - 1;
@@ -20,38 +60,22 @@ const Game = (function(){
                 getPlayerSelection();
             } else {
                 // return chosenCell;
-                Board.writeToBoard(chosenCell, playerMarker);
+                Board.writeToBoard(chosenCell, Game.getPlayerMarker().marker);
+                console.log(Board.boardArray)
             }
         } else {
             alert('game board full')
         }
     }
-    
 
-    console.log(Board.boardArray)
-
-    return {playerMarker, getPlayerSelection}
-})();
-
-const Players = (function(){
-    const playerCount = []
-
-    const createUser = function(name) {
-        const playerName = name;
-        const playerMarker = (function() {
-            let marker;
-            if (playerCount.length == 0) {
-                marker = 'X'
-            } else if (playerCount.length == 1) {
-                marker = 'O'
-            }
-            return marker;
-        })();
-        if (playerCount.length < 2) {
-            playerCount.push({playerName, playerMarker});
-            return {playerName, playerMarker};
+    const takeTurns = function() {
+        //call getPlayerSelection until game is won or tied
+        //checkWin function that will decide when the game is over
+        //otherwise call itself
+        if (!Board.boardArray.every(Boolean)) {
+            getPlayerSelection();
         }
     }
 
-    return {playerCount, createUser}
+    return {getPlayerSelection, getPlayerMarker, takeTurns}
 })();
