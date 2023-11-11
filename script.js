@@ -1,11 +1,35 @@
 const Board = (function() {
-    let boardArray = ['','','',
-                      '','','',
-                      '','',''];
-    const writeToBoard = function(cell, marker) {
-        boardArray.splice(cell, 1, marker)
+    let boardArray = [
+        ['','',''],
+        ['','',''],
+        ['','','']
+    ]
+    const writeToBoard = function(j, k, marker) {
+        boardArray[j].splice(k, 1, marker)
     }
-    return {boardArray, writeToBoard}
+    
+    //for larger boards:
+        //i = boardArray.length
+        //j = boardArray[0].length
+        //size = i * j
+        //useful when calling checkFullBoard
+        //for now just checking grid size 3x3 so not important
+
+    let checkedArr = [];
+    const checkFullBoard = function() {
+        for (let a in boardArray) {
+            for (let b in a) {
+                if (!b) {
+                    break
+                } else {
+                    checkedArr.push(b);
+                }
+            }
+            let result = checkedArr.length > 9; //eventually substitute with variable so any size board is possible
+            return result; // Bool
+        }
+    }
+    return {boardArray, writeToBoard, checkFullBoard}
 })();
 
 const Players = (function(){
@@ -51,31 +75,64 @@ const Game = (function() {
     }
 
     const getPlayerSelection = function() {
-        if (!Board.boardArray.every(Boolean)) {
-            chosenCell = parseInt(prompt("enter a number between 1 and 9")) - 1;
-            if (chosenCell > 8 || chosenCell < 0 || isNaN(chosenCell)) {
-                getPlayerSelection()
-            } else if (Board.boardArray[chosenCell]) {
-                alert("This space has already been selected")
-                getPlayerSelection();
-            } else {
-                // return chosenCell;
-                Board.writeToBoard(chosenCell, Game.getPlayerMarker().marker);
-                console.log(Board.boardArray)
-            }
+                 
+        const coord = prompt("enter a coordinate (x,y) where x and y are between 0 and 2");
+
+        const j = parseInt(coord.split('')[0]),
+            k = parseInt(coord.split('')[2]);
+        if (j > 2 || j < 0 || isNaN(j) ||
+            k > 2 || k < 0 || isNaN(k)) {
+            getPlayerSelection()
+        } else if (Board.boardArray[j][k]) {
+            alert("This space has already been selected")
+            getPlayerSelection();
         } else {
-            alert('game board full')
+            // return chosenCell;
+            Board.writeToBoard(j, k, Game.getPlayerMarker().marker);
+            console.log(Board.boardArray)
+            takeTurns();
         }
     }
 
     const takeTurns = function() {
-        //call getPlayerSelection until game is won or tied
-        //checkWin function that will decide when the game is over
-        //otherwise call itself
-        if (!Board.boardArray.every(Boolean)) {
+        
+        if (!Board.checkFullBoard()) {
             getPlayerSelection();
+        } else {
+            alert('tie game')
         }
     }
 
+
+
     return {getPlayerSelection, getPlayerMarker, takeTurns}
 })();
+
+
+let arr = [['x','o',''],['o','','o'],['x','','o']]
+
+function checkWin(arr) {
+    let gameWon = false;
+    const checkFalsy = (e) => e === false;
+    const checkRows = function() {
+        let exit = false;
+        arr.forEach(i => {
+            if (!exit) {
+                let inner = [];
+                i.forEach(j => {
+                    if (j === i[0]) {
+                        inner.push(true);
+                    } else {
+                        inner.push(false);                 
+                    }
+                })
+                if (!inner.some(checkFalsy)) {
+                    exit = true;
+                    gameWon = true;
+                }
+            }
+        });
+    }
+    checkRows(arr);
+    return {checkRows, gameWon}
+};
