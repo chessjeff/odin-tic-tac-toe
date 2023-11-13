@@ -32,7 +32,7 @@ const Board = (function() {
     return {boardArray, writeToBoard, checkFullBoard}
 })();
 
-const Players = (function(){
+const Players = (function() {
     const playerList = []
 
     const createUser = function(name) {
@@ -48,7 +48,7 @@ const Players = (function(){
         })();
         if (playerList.length < 2) {
             playerList.push({playerName, playerMarker});
-        } //playerList[{name, marker}, {name, marker}]
+        }
         return {playerName, playerMarker};
     }
 
@@ -95,44 +95,104 @@ const Game = (function() {
     }
 
     const takeTurns = function() {
-        
-        if (!Board.checkFullBoard()) {
+        if (checkWin(Board.boardArray).gameWon) {
+            alert('game over! someone won, idk who')
+        } else if (!Board.checkFullBoard()) {
             getPlayerSelection();
         } else {
             alert('tie game')
         }
     }
 
+    const checkWin = function(arr) {
+        
+        const getCols = (function() {
+            let cols = [];
+            const col = (arr, n) => arr.map(x => x[n])
+            for (let i = 0; i < arr.length; i++) {
+                cols.push(col(arr, i));
+            } 
+            return {cols}
+        })();
 
+        const getDiags = (function() {
+            let posDiag = [];
+            let negDiag = [];
+            let step = 0;
+            for (let i = 0; i < arr.length; i++) {
+                negDiag.push(arr[i][step])
+                step++;
+            }
+            step = 0
+            for (let j = arr.length - 1; j >=0; j--) {
+                posDiag.push(arr[j][step]);
+                step++
+            }
+            let diags = [negDiag, posDiag]
+            return {diags}
+        })();
+        
+        let gameWon = false;
+        const checkFalsy = (e) => e === false;
+        const findMatch = function(arr) {
+            let exit = false;
+            arr.forEach(i => {
+                if (!exit) {
+                    let inner = []; // track booleans
+                    i.forEach(j => {
+                        i[0] !== ''
+                            ? j === i[0] 
+                                ? inner.push(true) : inner.push(false)
+                            : inner.push(false);
+                    })
+                    if (!inner.some(checkFalsy)) {
+                        exit = true;
+                        gameWon = true;
+                    }
+                }
+            });
+        }
 
-    return {getPlayerSelection, getPlayerMarker, takeTurns}
+        findMatch(arr)
+        findMatch(getCols.cols)
+        findMatch(getDiags.diags)
+
+        return {findMatch, gameWon}
+    };
+
+    return {getPlayerSelection, getPlayerMarker, takeTurns, checkWin}
 })();
 
 
-let arr = [['x','o',''],['o','','o'],['x','','o']]
+/**
+ * two test cases for diags
+ * arr[0][0],arr[1][1],arr[2][2]
+ * arr[2][2],arr[1][1],arr[0][0]
+ * 
+ * **method* each of these to their own arrays and push them to diags arr
+ * findAllMatch(diags)
+ * 
+ * 
+ * 
+ */
+// let arr = [['x','','o'],['','xo',''],['o','','x']]
 
-function checkWin(arr) {
-    let gameWon = false;
-    const checkFalsy = (e) => e === false;
-    const checkRows = function() {
-        let exit = false;
-        arr.forEach(i => {
-            if (!exit) {
-                let inner = [];
-                i.forEach(j => {
-                    if (j === i[0]) {
-                        inner.push(true);
-                    } else {
-                        inner.push(false);                 
-                    }
-                })
-                if (!inner.some(checkFalsy)) {
-                    exit = true;
-                    gameWon = true;
-                }
-            }
-        });
-    }
-    checkRows(arr);
-    return {checkRows, gameWon}
-};
+// let j = 0;
+// let negDiag = []
+// //negative diag
+// for (let i = 0; i < arr.length; i++) {
+//     negDiag.push(arr[i][j])
+//     j++
+// }
+
+// let l = 0;
+// let posDiag = [];
+// //positive diag
+// for (let k = arr.length - 1; k >= 0; k--) {
+//     posDiag.push(arr[k][l])
+//     l++;
+// }
+
+// let diags = [negDiag, posDiag]
+
+// console.log(diags)
