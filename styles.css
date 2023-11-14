@@ -20,8 +20,11 @@ body {
 }
 
 .cell {
-
+    display: flex;
     background-color: white;
+    align-items: center;
+    justify-content: center;
+
 }
 
 .cell:hover {

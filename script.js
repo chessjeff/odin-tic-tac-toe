@@ -1,9 +1,23 @@
 const Board = (function() {
+    const rows = Array.from(document.getElementsByClassName('container'))
+    const cells = Array.from(document.getElementsByClassName('cell'))
+    const svgX = `<svg width="50px" height="50px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M19 5L5 19M5.00001 5L19 19" stroke="#000000" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>`
+    const svgO = `<svg width="50px" height="50px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z" stroke="#000000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>`
+    
+    const showImg = function(cell) {
+        cell.classList.contains('X') ? cell.innerHTML = svgX : cell.innerHTML = svgO;
+    }
+
     let boardArray = [
         ['','',''],
         ['','',''],
         ['','','']
     ]
+
     const writeToBoard = function(j, k, marker) {
         boardArray[j].splice(k, 1, marker)
     }
@@ -22,7 +36,9 @@ const Board = (function() {
             return result; // Bool
         }
     }
-    return {boardArray, writeToBoard, checkFullBoard}
+
+
+    return {rows, cells, showImg, boardArray, writeToBoard, checkFullBoard}
 })();
 
 const Players = (function() {
@@ -60,17 +76,13 @@ const Players = (function() {
     }
 
     const getPlayerSelection = function(coords, currentMark) {
-        // const coords = Display.getCoords();
         const j = parseInt(coords.split('')[0]),
             k = parseInt(coords.split('')[2]);
         if (Board.boardArray[j][k]) {
             alert("This space has already been selected")
             getPlayerSelection();
         } else {
-            // return chosenCell;
             Board.writeToBoard(j, k, currentMark);
-            console.log(Board.boardArray);
-            
         }
     }
     return {playerList, createUser, getPlayerMarker, getPlayerSelection}
@@ -82,9 +94,9 @@ const Game = (function() {
         if (!Board.checkFullBoard()) {
             Players.getPlayerSelection(coords, currentMark);
             if (checkWin(Board.boardArray)) {
-                  
                 alert(`Game Over! ${currentMark}'s won!`)
             }
+            return currentMark;
         } else {
             alert('tie game')
         }
@@ -119,7 +131,7 @@ const Game = (function() {
         
         let gameWon = false;
         const checkFalsy = (e) => e === false;
-        const findMatch = function(arr) {
+        const findWin = function(arr) {
             let exit = false;
             arr.forEach(i => {
                 if (!exit) {
@@ -138,18 +150,18 @@ const Game = (function() {
             });
         }
         let allDirs = arr.concat(getCols, getDiags)
-        findMatch(allDirs)
+        findWin(allDirs)
         return gameWon
     };
     return {takeTurns, checkWin}
 })();
 
-const cells = Array.from(document.getElementsByClassName('cell'))
-cells.forEach((cell) => {
+Board.cells.forEach((cell) => {
     const row = cell.parentNode.id
     cell.addEventListener('click', () => {
-        let coords = `${row},${cell.id}`
-        Game.takeTurns(coords)
-        
+        if (!Game.checkWin(Board.boardArray)) {
+            cell.classList.add(Game.takeTurns(`${row},${cell.id}`))
+            Board.showImg(cell)
+        }
     })        
 })
