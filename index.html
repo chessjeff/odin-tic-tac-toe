@@ -9,6 +9,17 @@
 </head>
 <body>
     <h1>THIS IS TIC TAC TOE</h1>
+    <dialog>
+        <form action="#" method="dialog">
+            <fieldset class="players">
+                <label for="player1" class="player">Player 1–X's</label>
+                <input type="text" class="player name" id="player1" placeholder="Jeff">
+                <label for="player2" class="player">Player 2 – O's</label>
+                <input type="text" class="player name" id="player2">
+            </fieldset>
+            <button type="button" class="set-players" id="set-players">Play!</button>
+        </form>
+    </dialog>
     <div class="wrapper">
         <div class="container" id="0">
             <div class="cell" id="0"></div>
@@ -26,5 +37,6 @@
             <div class="cell" id="2"></div>
         </div>
     </div>
+    <button type="button" class="reset" id="reset">New Game</button>
 </body>
 </html>

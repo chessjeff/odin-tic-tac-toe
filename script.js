@@ -1,17 +1,4 @@
 const Board = (function() {
-    const rows = Array.from(document.getElementsByClassName('container'))
-    const cells = Array.from(document.getElementsByClassName('cell'))
-    const svgX = `<svg width="50px" height="50px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M19 5L5 19M5.00001 5L19 19" stroke="#000000" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-                    </svg>`
-    const svgO = `<svg width="50px" height="50px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z" stroke="#000000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                    </svg>`
-    
-    const showImg = function(cell) {
-        cell.classList.contains('X') ? cell.innerHTML = svgX : cell.innerHTML = svgO;
-    }
-
     let boardArray = [
         ['','',''],
         ['','',''],
@@ -24,22 +11,35 @@ const Board = (function() {
 
     let checkedArr = [];
     const checkFullBoard = function() {
-        for (let a in boardArray) {
+        for (let a in Board.boardArray) {
             for (let b in a) {
-                if (!b) {
-                    break
-                } else {
-                    checkedArr.push(b);
+                if (b) {
+                    Board.checkedArr.push(b);
                 }
             }
-            let result = checkedArr.length > 9; //eventually substitute with variable so any size board is possible
+            let result = Board.checkedArr.length > 9; //eventually substitute with variable so any size board is possible
             return result; // Bool
         }
     }
 
+    const clearBoard = function() {
+        Board.boardArray = [
+            ['','',''],
+            ['','',''],
+            ['','','']
+        ]
 
-    return {rows, cells, showImg, boardArray, writeToBoard, checkFullBoard}
+        Display.cells.forEach(cell => {
+            cell.classList.remove('X');
+            cell.classList.remove('O')
+        })
+
+        Board.checkedArr = [];
+    }
+
+    return {boardArray, checkedArr, writeToBoard, checkFullBoard, clearBoard}
 })();
+
 
 const Players = (function() {
     let playerList = []
@@ -58,15 +58,14 @@ const Players = (function() {
         if (playerList.length < 2) {
             playerList.push({playerName, playerMarker});
         }
-        return {playerName, playerMarker};
     }
 
-    const markerIndex = () => [Players.playerList[0].playerMarker, Players.playerList[1].playerMarker]
+    const markerIndex = () => [playerList[0].playerMarker, playerList[1].playerMarker]
     
     let i = 0; //random number to pick first turn? currently Os always go first by nature of getPlayerMarker
     const getPlayerMarker = function() { //cycles between x and o via markerIndex indexes 
         let marker;
-        if (markerIndex().length == 2) {
+        if (playerList.length == 2) {
             i == 1 ? i-- : i++;
             marker = markerIndex()[i];
             return marker;
@@ -87,6 +86,7 @@ const Players = (function() {
     }
     return {playerList, createUser, getPlayerMarker, getPlayerSelection}
 })();
+
 
 const Game = (function() {
     const takeTurns = function(coords) {
@@ -156,12 +156,82 @@ const Game = (function() {
     return {takeTurns, checkWin}
 })();
 
-Board.cells.forEach((cell) => {
+
+const Display = (function() {
+    const dialog = document.querySelector('dialog'),
+        nameButton = document.getElementById('set-players'),
+        reset = document.getElementById('reset'),
+        names = Array.from(document.getElementsByClassName('player name')),
+        svgX = `<svg width="50px" height="50px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M19 5L5 19M5.00001 5L19 19" stroke="#000000" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>`,
+        svgO = `<svg width="50px" height="50px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z" stroke="#000000" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>`,
+        rows = Array.from(document.getElementsByClassName('container')),
+        cells = Array.from(document.getElementsByClassName('cell'))
+
+    const showImg = function(cell) {
+        cell.classList.contains('X') ? cell.innerHTML = Display.svgX : cell.innerHTML = Display.svgO;
+    } 
+
+    const removeImg = function() {
+        cells.forEach(cell => cell.innerHTML = '')
+    }
+
+    return {dialog, nameButton, reset, names, svgO, svgX, rows, cells, showImg, removeImg};
+})();
+
+
+
+Display.cells.forEach((cell) => {
     const row = cell.parentNode.id
     cell.addEventListener('click', () => {
-        if (!Game.checkWin(Board.boardArray)) {
-            cell.classList.add(Game.takeTurns(`${row},${cell.id}`))
-            Board.showImg(cell)
-        }
+        cell.classList.add(Game.takeTurns(`${row},${cell.id}`))
+        Display.showImg(cell)
     })        
 })
+
+const enterNames = function() {
+    Display.dialog.showModal()
+    Display.nameButton.addEventListener('click', function(e) {
+        e.preventDefault();
+        Display.names.forEach((n) => {
+            Players.createUser(n.textContent);
+            console.log(n.textContent)
+        })
+        Display.dialog.close();
+    })
+}
+
+
+Display.reset.addEventListener('click', function() {
+    Display.removeImg();
+    Board.clearBoard();
+    Players.playerList = [];
+    console.log(Players.playerList)
+    console.log(Display.names)
+    enterNames();
+})
+
+enterNames();
+
+/** flow:
+ *  click()
+ *      > takeTurns(coords) 
+ *         > getPlayerMarker = currentMark
+ *             > shifts markerIndex
+ *             > returns marker 
+ *         > checkFullBoard 
+ *             > returns bool if boardArray > 9
+ *         > getPlayerSelection(coords, marker)
+ *             > writeToBoard(coords, marker)
+ *                 > writes to board
+ *         > checkWin(boardArray)
+ *             > gets cols, diags, concats to boardArray
+ *             > findWin() finds three in a row
+ *         > returns currentMark
+ *      > adds currentMark to clicked cell class list
+ *      > showImg(cell)
+ *         > adds svg depending on class
+ */
