@@ -1,15 +1,34 @@
 const Board = (function() {
     let boardArray = [['','',''],['','',''],['','','']];
 
-    const writeToBoard = function(j, k, mark) {
+    const writeToBoard = function(selection, mark) {
+        const j = parseInt(selection.split('')[0]),
+            k = parseInt(selection.split('')[2]);
+        if (Board.boardArray[j][k]) {
+            alert("This space has already been selected")
+            Game.turn();
+        }
         Board.boardArray[j].splice(k, 1, mark)
+    }
+
+    let checkedArr = []
+    const checkFullBoard = function() {
+        for (let a in Board.boardArray) {
+            for (let b in a) {
+                if (b) {
+                    Board.checkedArr.push(b);
+                }
+            }
+            let result = Board.checkedArr.length > 8; //eventually substitute with variable so any size board is possible
+            return result; // Bool
+        }
     }
 
     const clearBoard = function() {
         return Board.boardArray = [['','',''],['','',''],['','','']];
     }
 
-    return {boardArray, writeToBoard, clearBoard}
+    return {boardArray, writeToBoard, checkedArr, checkFullBoard, clearBoard}
 })();
 
 const Players = (function() {
@@ -29,13 +48,11 @@ const Players = (function() {
     let i = 0;
     const markerIndex = () => [playerList[0].marker, playerList[1].marker];
     const alternateTurns = function() {
-        let marker;
+        let mark;
         if (playerList.length == 2) {
             i == 0 ? i++ : i--;
-            marker = markerIndex()[i];
-            return marker;
-        } else {
-            alert('no players assigned')
+            mark = markerIndex()[i];
+            return mark;
         }
     }
 
@@ -49,29 +66,25 @@ const Players = (function() {
 const Game = (function() {
     
     const main = function() {
-        let playerOne = prompt("Enter Player 1 name")
-        let playerTwo = prompt("Enter Player 2 name")
-        Players.createPlayer(playerOne)
-        Players.createPlayer(playerTwo)
+        Players.createPlayer(prompt("Enter Player 1 Name"))
+        Players.createPlayer(prompt("Enter Player 2 Name"))
         console.log(Players.playerList)
         //while prompts players until game win or full board
-        for (let i = 0; i <= Board.boardArray.length; i++) { //temp
-            Players.alternateTurns()
-            
-            //getPlayerSelection function
-            //write to board function
-
+        while (Board.checkFullBoard) {
+            let mark = Players.alternateTurns()
+            //incase player chooses already chosen spot, doesn't skip their turn
+            Game.turn(mark);
         }
     }
 
-    const coords = function(j, k) {
-        position = []
-        if ((j <= 2 && j >= 0) && (k <= 2 && k >= 0)) {
-            position.push(j)
-            position.push(k)
-            console.log(position)
-            return position
-        }
+    const turn = function(mark) {
+        let selection = Game.getSelection() //string
+        console.log({selection})
+        Board.writeToBoard(selection, mark) //split str into 2 nums. place mark in spot
+        console.log(Board.boardArray)
     }
-    return {main, coords}
+
+    const getSelection = () => prompt("Enter Cell (j, k)")
+
+    return {main, turn, getSelection}
 })();
