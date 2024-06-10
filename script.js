@@ -1,19 +1,18 @@
 const Board = (function() {
     let boardArray = [['','',''],['','',''],['','','']];
 
-    const writeToBoard = function(selection, mark) {
-        const j = parseInt(selection.split('')[0]),
-            k = parseInt(selection.split('')[2]);
-        if (j > 2 || k > 2) {
+    const writeToBoard = function(row, cell, mark) {
+        if (row > 2 || cell > 2) {
             alert("invalid choice")
             Game.turn(mark);
-        } else if (Board.boardArray[j][k]) {
+        } else if (Board.boardArray[row][cell]) {
             alert("This space has already been selected")
             Game.turn(mark);
         } else {
-            Board.boardArray[j].splice(k, 1, mark)
+            Game.checkWin(Board.boardArray)
+            Board.boardArray[row].splice(cell, 1, mark)
             //Display logic branches from game logic here
-            Display.displayBoard(j, k, mark)
+            Display.displayBoard(row, cell, mark)
         }
     }
 
@@ -75,33 +74,22 @@ const Players = (function() {
 
 const Game = (function() {
     
-    const main = function() {
-        Players.createPlayer(prompt("Enter Player 1 Name"))
-        Players.createPlayer(prompt("Enter Player 2 Name"))
-        console.log(Players.playerList)
-        //while prompts players until game win or full board
-        while (!checkWin(Board.boardArray)) {
-            let mark = Players.alternateTurns()
-            //incase player chooses already chosen spot, doesn't skip their turn
-            Game.turn(mark);
-            if (Game.checkWin(Board.boardArray)) {
-                alert(`Game Over! ${mark} won!`)
-                break;
-            } else if (Board.checkFullBoard()) {
-                alert('Tie Game!')
-                break;
-            }
+    const playRound = function(row, cell) {
+        let mark = Players.alternateTurns()
+
+        if (!checkWin(Board.boardArray)) {
+            Board.writeToBoard(row, cell, mark) //split str into 2 nums. place mark in spot
+            console.log(Board.boardArray)
+
+        } else if (Game.checkWin(Board.boardArray)) {
+            alert(`Game Over! ${mark}s won!`)
+            console.log('please reset the game')
+
+        } else if (Board.checkFullBoard()) {
+            alert('Tie Game!')
+            console.log('please reset the game')
         }
-        alert("Please reset the game")
     }
-
-    const turn = function(mark) {
-        let selection = Game.getSelection() //string
-        Board.writeToBoard(selection, mark) //split str into 2 nums. place mark in spot
-        console.log(Board.boardArray)
-    }
-
-    const getSelection = () => prompt("Enter Cell (j,k)")
 
     const resetGame = function() {
         Board.clearBoard()
@@ -161,26 +149,47 @@ const Game = (function() {
         return gameWon
     };
 
-    return {main, turn, getSelection, resetGame, checkWin}
+    return {playRound, getSelection, resetGame, checkWin}
 })();
 
 const Display = (function() {
     const rows = Array.from(document.getElementsByClassName('container')),
-        cells = Array.from(document.getElementsByClassName('cell'))
+        cells = Array.from(document.getElementsByClassName('cell')),
+        start = document.getElementById('start'),
+        reset = document.getElementById('reset');
 
-    const displayBoard = function(j, k, mark) {
-        if (!Game.checkWin(Board.boardArray)) {
-            Display.rows.forEach((row) => {
-                if (row.id == j) {
-                    Display.cells.forEach((cell) => {
-                        if (cell.id == k) {
-                            cell.textContent = mark;
-                        }
-                    })
-                }
-            })
-        }
+    const displayBoard = function(row, cell, mark) {
+        let r = Array.from(Display.rows[row].children)
+        r[cell].textContent = mark
     }
+
+    //event listener function for all cells after players are selected
+    //
+    const turnOnBoard = function() {
+        cells.forEach((cell) => {
+            let row = parseInt(cell.parentNode.id)
+            cell.addEventListener('click', () => {
+                cell = parseInt(cell.id)
+                console.log(row, cell)
+                Game.playRound(row, cell)
+            })
+        })
+    }
+
+    start.addEventListener('click', () => {
+        if (Players.playerList.length == 0) {
+            Players.createPlayer(prompt("Enter Player 1 Name"))
+            Players.createPlayer(prompt("Enter Player 2 Name"))
+            console.log(Players.playerList)
+            start.disabled = true
+            turnOnBoard()
+        }
+    })
+
+    reset.addEventListener('click', () => {
+        Game.resetGame();
+        start.disabled = false;
+    })
 
     return {rows, cells, displayBoard}
 })()
