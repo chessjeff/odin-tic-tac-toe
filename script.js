@@ -1,32 +1,31 @@
 const Board = (function() {
     let boardArray = [['','',''],['','',''],['','','']];
+    let invalidSpace = false
 
     const writeToBoard = function(row, cell, mark) {
-        if (row > 2 || cell > 2) {
-            alert("invalid choice")
-            Game.turn(mark);
-        } else if (Board.boardArray[row][cell]) {
-            alert("This space has already been selected")
-            Game.turn(mark);
+        if (Board.boardArray[row][cell]) {
+            Board.invalidSpace = true;
+            Players.alternateTurns(); //to not skip player's turn
+            console.log('This space has already been selected')
         } else {
-            Game.checkWin(Board.boardArray)
             Board.boardArray[row].splice(cell, 1, mark)
-            //Display logic branches from game logic here
             Display.displayBoard(row, cell, mark)
         }
     }
 
     let checkedArr = []
     const checkFullBoard = function() {
-        for (let a in Board.boardArray) {
-            for (let b in a) {
-                if (b) {
-                    Board.checkedArr.push(b);
+        if (!Board.invalidSpace) {
+            for (let a in Board.boardArray) {
+                for (let b in a) {
+                    if (b) {
+                        Board.checkedArr.push(b);
+                    }
                 }
+                console.log(Board.checkedArr)
+                let result = Board.checkedArr.length >= 9; //eventually substitute with variable so any size board is possible
+                return result; // Bool
             }
-            console.log(Board.checkedArr)
-            let result = Board.checkedArr.length >= 9; //eventually substitute with variable so any size board is possible
-            return result; // Bool
         }
     }
 
@@ -38,7 +37,7 @@ const Board = (function() {
         return Board.checkedArr = [];
     }
 
-    return {boardArray, writeToBoard, checkedArr, checkFullBoard, clearBoard, clearCheck}
+    return {boardArray, invalidSpace, writeToBoard, checkedArr, checkFullBoard, clearBoard, clearCheck}
 })();
 
 const Players = (function() {
@@ -73,28 +72,33 @@ const Players = (function() {
 })();
 
 const Game = (function() {
-    
-    const playRound = function(row, cell) {
+
+    const main = function(row, cell) {
+        Board.invalidSpace = false
         let mark = Players.alternateTurns()
+        Board.writeToBoard(row, cell, mark)
+        let key = Game.endGame(mark);
+        Display.turnOffBoard(key);
+    }
 
-        if (!checkWin(Board.boardArray)) {
-            Board.writeToBoard(row, cell, mark) //split str into 2 nums. place mark in spot
-            console.log(Board.boardArray)
-
-        } else if (Game.checkWin(Board.boardArray)) {
-            alert(`Game Over! ${mark}s won!`)
-            console.log('please reset the game')
-
-        } else if (Board.checkFullBoard()) {
-            alert('Tie Game!')
-            console.log('please reset the game')
+    const endGame = function(mark) {
+        let key;
+        if (Game.checkWin(Board.boardArray)) {
+            console.log(`Game Over! ${mark.toUpperCase()}s won!\nPlease reset the game`)
+            key = 1;
+        } else if (Board.checkFullBoard() && !Game.checkWin(Board.boardArray)) {
+            console.log('Tie Game!\nPlease reset the game')
+            key = 1;
         }
+        return key;
     }
 
     const resetGame = function() {
-        Board.clearBoard()
-        Board.clearCheck()
-        Players.clearPlayerList()
+        //Board.clearBoard()
+        //Board.clearCheck()
+        //Players.clearPlayerList()
+        //Display.clearDisplay()
+        location.href = location.href //hacky lol
     }
 
     const checkWin = function(arr) {
@@ -149,14 +153,15 @@ const Game = (function() {
         return gameWon
     };
 
-    return {playRound, getSelection, resetGame, checkWin}
+    return {main, endGame, resetGame, checkWin}
 })();
 
 const Display = (function() {
     const rows = Array.from(document.getElementsByClassName('container')),
         cells = Array.from(document.getElementsByClassName('cell')),
         start = document.getElementById('start'),
-        reset = document.getElementById('reset');
+        reset = document.getElementById('reset'),
+        lock = false;
 
     const displayBoard = function(row, cell, mark) {
         let r = Array.from(Display.rows[row].children)
@@ -164,16 +169,26 @@ const Display = (function() {
     }
 
     //event listener function for all cells after players are selected
-    //
     const turnOnBoard = function() {
-        cells.forEach((cell) => {
-            let row = parseInt(cell.parentNode.id)
-            cell.addEventListener('click', () => {
-                cell = parseInt(cell.id)
-                console.log(row, cell)
-                Game.playRound(row, cell)
+        console.log(lock)
+        if (!lock) {
+            cells.forEach((cell) => {
+                let rowInt = parseInt(cell.parentNode.id)
+                cell.addEventListener('click', () => {
+                    cellInt = parseInt(cell.id)
+                    console.log(rowInt, cellInt);
+                    Game.main(rowInt, cellInt)
+                })
             })
-        })
+        }
+    }
+
+    const turnOffBoard = function(key) {
+        if (key) {Display.lock = true}
+    }
+
+    const clearDisplay = function() {
+        cells.forEach((cell) => cell.textContent = '')
     }
 
     start.addEventListener('click', () => {
@@ -191,5 +206,5 @@ const Display = (function() {
         start.disabled = false;
     })
 
-    return {rows, cells, displayBoard}
+    return {rows, cells, displayBoard, turnOffBoard, clearDisplay}
 })()
